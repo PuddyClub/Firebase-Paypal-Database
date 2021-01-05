@@ -174,6 +174,7 @@ module.exports = async function (req, res, http_page, data) {
                         // Exist Custom Module
                         const custom_module_manager = require('puddy-lib/libs/custom_module_loader');
                         const exist_custom_module = custom_module_manager.validator(custom_modules, 'ipn');
+                        const custom_module_options = { default: false, custom: false };
 
                         // Send Information
                         const sendInformation = async function (itemNumber, data) {
@@ -242,7 +243,7 @@ module.exports = async function (req, res, http_page, data) {
                             if (typeof the_custom !== "string") {
 
                                 // Nope Custom
-                                if (exist_custom_module) { db_prepare.isCustom = false; }
+                                if (exist_custom_module) { db_prepare.isCustom = false; custom_module_options.default = true; }
 
                                 // The DB
                                 const the_data_db = account.child('default').child(data.firebase.name).child(data.firebase.number);
@@ -259,7 +260,7 @@ module.exports = async function (req, res, http_page, data) {
                             else {
 
                                 // Is Custom
-                                if (exist_custom_module) { db_prepare.isCustom = true; }
+                                if (exist_custom_module) { db_prepare.isCustom = true; custom_module_options.custom = true; }
 
                                 // The DB
                                 const the_custom_data_db = account.child(firebase.databaseEscape(the_custom)).child(data.firebase.name).child(data.firebase.number);
@@ -348,7 +349,7 @@ module.exports = async function (req, res, http_page, data) {
 
                         // Extra Actions Manager for Paypal Start
                         if (db_prepare && exist_custom_module) {
-                            await custom_module_manager.run(custom_modules, db_prepare, 'ipn');
+                            await custom_module_manager.run(custom_modules, db_prepare, 'ipn', custom_module_options);
                         }
 
                         // Complete
