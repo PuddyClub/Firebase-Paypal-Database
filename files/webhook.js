@@ -16,9 +16,6 @@ module.exports = async function (req, res, http_page, data) {
         // Custom Module Config
         const custom_modules = _.defaultsDeep({}, data.modules, {
 
-            // Get Custom Modules Folder
-            path: '',
-
             // Webhook Actions
             webhook: {
 
