@@ -107,6 +107,11 @@ module.exports = async function (req, res, http_page, data) {
                 validator_email = check_email(req.body.receiver_id);
             }
 
+            // Receiver ID
+            if (!validator_email) {
+                validator_email = check_email(req.body.business);
+            }
+
             // Confirm to Continue
             if (validator_email) {
 
