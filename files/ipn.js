@@ -175,7 +175,7 @@ module.exports = async function (req, res, http_page, data) {
                         let db_prepare = null;
 
                         // Exist Custom Module
-                        const custom_module_manager = require('./custom_modules');
+                        const custom_module_manager = require('puddy-lib/libs/custom_module_loader');
                         const exist_custom_module = custom_module_manager.validator(custom_modules, 'ipn');
 
                         // Send Information
