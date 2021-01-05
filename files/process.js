@@ -16,9 +16,9 @@ module.exports = async function (req, res, data) {
                 if (req.query.sandbox === "true") { req.query.sandbox = true; }
                 else if (req.query.sandbox === "false") { req.query.sandbox = false; }
 
-                // NIP
-                if (req.query.type === "nip") {
-                    await require('./nip')(req, res, http_page, data);
+                // IPN
+                if (req.query.type === "ipn") {
+                    await require('./ipn')(req, res, http_page, data);
                     return;
                 }
 

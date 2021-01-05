@@ -48,8 +48,8 @@ module.exports = async function (req, res, http_page, data) {
             // Get Custom Modules Folder
             path: '',
 
-            // Nip Actions
-            nip: {
+            // IPN Actions
+            ipn: {
 
                 // Custom Buy
                 custom: [],
@@ -130,7 +130,7 @@ module.exports = async function (req, res, http_page, data) {
 
                                 // Nope
                                 else {
-                                    reject(new Error('PAYPAL NIP INVALID!'));
+                                    reject(new Error('PAYPAL IPN INVALID!'));
                                 }
 
                             });
@@ -154,7 +154,7 @@ module.exports = async function (req, res, http_page, data) {
                     if (result) {
 
                         // Get Account
-                        let account = db.child(firebase.databaseEscape(req.query.account)).child('nip');
+                        let account = db.child(firebase.databaseEscape(req.query.account)).child('ipn');
 
                         // Normal
                         if (!req.body.test_ipn) {
@@ -171,7 +171,7 @@ module.exports = async function (req, res, http_page, data) {
 
                         // Exist Custom Module
                         const custom_module_manager = require('./custom_modules');
-                        const exist_custom_module = custom_module_manager.validator(custom_modules, 'nip');
+                        const exist_custom_module = custom_module_manager.validator(custom_modules, 'ipn');
 
                         // Send Information
                         const sendInformation = async function (itemNumber, data) {
@@ -346,7 +346,7 @@ module.exports = async function (req, res, http_page, data) {
 
                         // Extra Actions Manager for Paypal Start
                         if (db_prepare && exist_custom_module) {
-                            await custom_module_manager.run(custom_modules, 'nip');
+                            await custom_module_manager.run(custom_modules, 'ipn');
                         }
 
                         // Complete
