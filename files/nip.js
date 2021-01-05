@@ -42,6 +42,25 @@ module.exports = async function (req, res, http_page, data) {
             }
         });
 
+        // Custom Module Config
+        const custom_modules = _.defaultsDeep({}, data.modules, {
+
+            // Get Custom Modules Folder
+            path: '',
+
+            // Nip Actions
+            nip: {
+
+                // Custom Buy
+                custom: [],
+
+                // Custom Buy
+                default: []
+
+            }
+
+        });
+
         // Start Firebase
         const firebase = require('puddy-lib/firebase');
         firebase.start(require('firebase-admin'), tinyCfg.options, tinyCfg.firebase);
@@ -147,7 +166,7 @@ module.exports = async function (req, res, http_page, data) {
                             account = account.child('sandbox');
                         }
 
-                        // Pudding Coin DB Prepare
+                        // Extra DB Actions Prepare
                         let db_prepare = null;
 
                         // Send Information
@@ -195,29 +214,46 @@ module.exports = async function (req, res, http_page, data) {
                             final_data.item_name = data.normal.name;
                             final_data.item_number = data.normal.number;
 
+                            // Prepare Main Base
+                            if (!db_prepare) {
+                                db_prepare = { items: {} };
+                            }
+
+                            // Insert Items
+                            if (!db_prepare.items[data.firebase.name]) {
+                                db_prepare.items[data.firebase.name] = {};
+                            }
+                            if (!db_prepare.items[data.firebase.name][data.firebase.number]) {
+                                db_prepare.items[data.firebase.name][data.firebase.number] = {};
+                            }
+
                             // Result
                             if (typeof the_custom !== "string") {
-                                await account.child('default').child(data.firebase.name).child(data.firebase.number).set(final_data);
+
+                                // Nope Custom
+                                db_prepare.isCustom = false;
+
+                                // The DB
+                                const the_data_db = account.child('default').child(data.firebase.name).child(data.firebase.number);
+
+                                // Insert Default
+                                db_prepare.items[data.firebase.name][data.firebase.number] = the_data_db;
+
+                                // Insert Value
+                                await the_data_db.set(final_data);
+                            
                             }
 
                             // Custom Result
                             else {
 
+                                // Is Custom
+                                db_prepare.isCustom = true;
+
                                 // The DB
                                 const the_custom_data_db = account.child(firebase.databaseEscape(the_custom)).child(data.firebase.name).child(data.firebase.number);
 
-                                // Prepare Main Base
-                                if (!db_prepare) {
-                                    db_prepare = { items: {} };
-                                }
-
-                                // Insert Custom Name
-                                if (!db_prepare.items[data.firebase.name]) {
-                                    db_prepare.items[data.firebase.name] = {};
-                                }
-                                if (!db_prepare.items[data.firebase.name][data.firebase.number]) {
-                                    db_prepare.items[data.firebase.name][data.firebase.number] = {};
-                                }
+                                // Insert Custom
                                 db_prepare.items[data.firebase.name][data.firebase.number] = the_custom_data_db;
                                 db_prepare.custom_name = the_custom;
 
@@ -297,9 +333,21 @@ module.exports = async function (req, res, http_page, data) {
                         // Send Info
                         await account.child('global').set(req.body);
 
-                        // Pudding Coin Manager for Paypal Start
+                        // Extra Actions Manager for Paypal Start
                         if (db_prepare) {
-                            await require('./pudding_coins')(db_prepare, 'nip');
+
+                            // Exist Custom Module
+                            if (
+                                custom_modules &&
+                                typeof custom_modules.path === "string" &&
+                                custom_modules.path.length > 0 &&
+                                custom_modules.nip
+                            ) {
+
+                                await require('./pudding_coins')(db_prepare, 'nip');
+
+                            }
+
                         }
 
                         // Complete
