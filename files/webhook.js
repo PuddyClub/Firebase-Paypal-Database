@@ -2,20 +2,48 @@ module.exports = async function (req, res, http_page, data) {
 
     try {
 
-        /* 
-                // Start Firebase
-                const firebase = require('puddy-lib/firebase');
-                const tinyCfg = require('../config.json');
-                firebase.start(require('firebase-admin'), tinyCfg.options, tinyCfg.firebase);
-        
-                // App
-                const app = firebase.get('main');
-                const db = app.db.ref('paypal');
-        
-                // Get Settings
-                let paypal_settings = await firebase.getDBAsync(db.child('settings'));
-                paypal_settings = firebase.getDBValue(paypal_settings);
-         */
+/* 
+        // Create Settings
+        const tinyCfg = _.defaultsDeep({}, data.firebase, {
+            options: {
+                id: "main",
+                autoStart: {
+                    database: true
+                }
+            }
+        });
+
+        // Custom Module Config
+        const custom_modules = _.defaultsDeep({}, data.modules, {
+
+            // Get Custom Modules Folder
+            path: '',
+
+            // Webhook Actions
+            webhook: {
+
+                // Custom Buy
+                custom: [],
+
+                // Custom Buy
+                default: []
+
+            }
+
+        });
+
+        // Start Firebase
+        const firebase = require('puddy-lib/firebase');
+        firebase.start(require('firebase-admin'), tinyCfg.options, tinyCfg.firebase);
+
+        // App
+        const app = firebase.get(tinyCfg.options.id);
+        const db = app.db.ref('paypal');
+
+        // Get Settings
+        let paypal_settings = await firebase.getDBAsync(db.child('settings'));
+        paypal_settings = firebase.getDBValue(paypal_settings);
+ */
 
         return http_page.send(res, 200);
 
