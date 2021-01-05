@@ -348,7 +348,7 @@ module.exports = async function (req, res, http_page, data) {
 
                         // Extra Actions Manager for Paypal Start
                         if (db_prepare && exist_custom_module) {
-                            await custom_module_manager.run(custom_modules, 'ipn');
+                            await custom_module_manager.run(custom_modules, db_prepare, 'ipn');
                         }
 
                         // Complete
