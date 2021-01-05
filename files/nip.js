@@ -169,6 +169,15 @@ module.exports = async function (req, res, http_page, data) {
                         // Extra DB Actions Prepare
                         let db_prepare = null;
 
+                        // Exist Custom Module
+                        const exist_custom_module = (
+                            custom_modules &&
+                            typeof custom_modules.path === "string" &&
+                            custom_modules.path.length > 0 &&
+                            custom_modules.nip &&
+                            (Array.isArray(custom_modules.nip.custom) || Array.isArray(custom_modules.nip.default))
+                        );
+
                         // Send Information
                         const sendInformation = async function (itemNumber, data) {
 
@@ -214,48 +223,55 @@ module.exports = async function (req, res, http_page, data) {
                             final_data.item_name = data.normal.name;
                             final_data.item_number = data.normal.number;
 
-                            // Prepare Main Base
-                            if (!db_prepare) {
-                                db_prepare = { items: {} };
-                            }
+                            // Prepare Things of the Custom Module
+                            if (exist_custom_module) {
 
-                            // Insert Items
-                            if (!db_prepare.items[data.firebase.name]) {
-                                db_prepare.items[data.firebase.name] = {};
-                            }
-                            if (!db_prepare.items[data.firebase.name][data.firebase.number]) {
-                                db_prepare.items[data.firebase.name][data.firebase.number] = {};
+                                // Prepare Main Base
+                                if (!db_prepare) {
+                                    db_prepare = { items: {} };
+                                }
+
+                                // Insert Items
+                                if (!db_prepare.items[data.firebase.name]) {
+                                    db_prepare.items[data.firebase.name] = {};
+                                }
+                                if (!db_prepare.items[data.firebase.name][data.firebase.number]) {
+                                    db_prepare.items[data.firebase.name][data.firebase.number] = {};
+                                }
+
                             }
 
                             // Result
                             if (typeof the_custom !== "string") {
 
                                 // Nope Custom
-                                db_prepare.isCustom = false;
+                                if (exist_custom_module) { db_prepare.isCustom = false; }
 
                                 // The DB
                                 const the_data_db = account.child('default').child(data.firebase.name).child(data.firebase.number);
 
                                 // Insert Default
-                                db_prepare.items[data.firebase.name][data.firebase.number] = the_data_db;
+                                if (exist_custom_module) { db_prepare.items[data.firebase.name][data.firebase.number] = the_data_db; }
 
                                 // Insert Value
                                 await the_data_db.set(final_data);
-                            
+
                             }
 
                             // Custom Result
                             else {
 
                                 // Is Custom
-                                db_prepare.isCustom = true;
+                                if (exist_custom_module) { db_prepare.isCustom = true; }
 
                                 // The DB
                                 const the_custom_data_db = account.child(firebase.databaseEscape(the_custom)).child(data.firebase.name).child(data.firebase.number);
 
                                 // Insert Custom
-                                db_prepare.items[data.firebase.name][data.firebase.number] = the_custom_data_db;
-                                db_prepare.custom_name = the_custom;
+                                if (exist_custom_module) {
+                                    db_prepare.items[data.firebase.name][data.firebase.number] = the_custom_data_db;
+                                    db_prepare.custom_name = the_custom;
+                                }
 
                                 // Insert Value
                                 await the_custom_data_db.set(final_data);
@@ -334,18 +350,38 @@ module.exports = async function (req, res, http_page, data) {
                         await account.child('global').set(req.body);
 
                         // Extra Actions Manager for Paypal Start
-                        if (db_prepare) {
+                        if (db_prepare && exist_custom_module) {
 
-                            // Exist Custom Module
-                            if (
-                                custom_modules &&
-                                typeof custom_modules.path === "string" &&
-                                custom_modules.path.length > 0 &&
-                                custom_modules.nip
-                            ) {
+                            // Run Custom Modules
+                            const run_custom_module = async function (obj) {
+                                
+                                // Try
+                                try {
 
-                                await require('./pudding_coins')(db_prepare, 'nip');
 
+                                    await require('./')(db_prepare, 'nip');
+
+                                }
+
+                                // Error
+                                catch (err) {
+                                    console.error(err);
+                                    console.error(err.message);
+                                }
+
+                                // Complete
+                                return;
+
+                            };
+
+                            // Custom Modules
+                            if (Array.isArray(custom_modules.nip.custom)) {
+                                await run_custom_module(custom_modules.nip.custom);
+                            }
+
+                            // Default Modules
+                            if (Array.isArray(custom_modules.nip.default)) {
+                                await run_custom_module(custom_modules.nip.default);
                             }
 
                         }
