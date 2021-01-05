@@ -352,21 +352,50 @@ module.exports = async function (req, res, http_page, data) {
                         // Extra Actions Manager for Paypal Start
                         if (db_prepare && exist_custom_module) {
 
+                            const path = require('path');
+                            const fs = require('fs');
+
                             // Run Custom Modules
-                            const run_custom_module = async function (obj) {
-                                
-                                // Try
-                                try {
+                            const run_custom_module = async function (obj, type) {
 
+                                // Read Array
+                                for (const item in obj) {
 
-                                    await require('./')(db_prepare, 'nip');
+                                    // Is String
+                                    if (typeof obj[item] === "string") {
 
-                                }
+                                        // Try to Read the Module
+                                        try {
 
-                                // Error
-                                catch (err) {
-                                    console.error(err);
-                                    console.error(err.message);
+                                            // Module FIle Path
+                                            const file_path = path.join(custom_modules.path, './' + obj[item]);
+
+                                            // Read File
+                                            if(fs.lstatSync(file_path).isFile()) {
+                                                await require(file_path)(db_prepare, 'nip');
+                                            }
+                                        
+                                        }
+
+                                        // Error
+                                        catch (err) {
+                                            console.error(err);
+                                            console.error(err.message);
+                                        }
+
+                                    }
+
+                                    // Nope
+                                    else {
+
+                                        // Prepare Error Message
+                                        const err = new Error(`The Custom Paypal Module value needs to be a string!\nArray: ${type}\nIndex: ${item}`);
+
+                                        console.error(err);
+                                        console.error(err.message);
+
+                                    }
+
                                 }
 
                                 // Complete
@@ -376,12 +405,12 @@ module.exports = async function (req, res, http_page, data) {
 
                             // Custom Modules
                             if (Array.isArray(custom_modules.nip.custom)) {
-                                await run_custom_module(custom_modules.nip.custom);
+                                await run_custom_module(custom_modules.nip.custom, 'custom');
                             }
 
                             // Default Modules
                             if (Array.isArray(custom_modules.nip.default)) {
-                                await run_custom_module(custom_modules.nip.default);
+                                await run_custom_module(custom_modules.nip.default, 'default');
                             }
 
                         }
