@@ -6,7 +6,7 @@ module.exports = async function (req, res, http_page, data) {
 
         const https = require('https');
         const qs = require('querystring');
-        const objType = require('puddy-lib/get/objType');
+        const objType = require('@tinypudding/puddy-lib/get/objType');
 
         const SANDBOX_URL = 'www.sandbox.paypal.com';
         const REGULAR_URL = 'www.paypal.com';
@@ -59,7 +59,7 @@ module.exports = async function (req, res, http_page, data) {
         });
 
         // Start Firebase
-        const firebase = require('puddy-lib/firebase');
+        const firebase = require('@tinypudding/puddy-lib/firebase');
         firebase.start(require('firebase-admin'), tinyCfg.options, tinyCfg.firebase);
 
         // App
@@ -172,7 +172,7 @@ module.exports = async function (req, res, http_page, data) {
                         let db_prepare = null;
 
                         // Exist Custom Module
-                        const custom_module_manager = require('puddy-lib/libs/custom_module_loader');
+                        const custom_module_manager = require('@tinypudding/puddy-lib/libs/custom_module_loader');
                         const exist_custom_module = custom_module_manager.validator(custom_modules, 'ipn');
                         const custom_module_options = { default: false, custom: false };
 

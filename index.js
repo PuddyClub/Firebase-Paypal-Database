@@ -3,7 +3,7 @@ const paypalModule = {};
 
 // Start
 paypalModule.start = function (data) {
-    const express = require('firebase-webhook-express-default');
+    const express = require('@tinypudding/firebase-webhook-express-default');
     paypalModule.app = express(async (req, res) => {
 
         // Action

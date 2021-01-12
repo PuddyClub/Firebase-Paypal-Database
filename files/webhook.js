@@ -30,7 +30,7 @@ module.exports = async function (req, res, http_page, data) {
         });
 
         // Start Firebase
-        const firebase = require('puddy-lib/firebase');
+        const firebase = require('@tinypudding/puddy-lib/firebase');
         firebase.start(require('firebase-admin'), tinyCfg.options, tinyCfg.firebase);
 
         // App

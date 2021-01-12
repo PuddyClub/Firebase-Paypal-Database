@@ -1,7 +1,7 @@
 module.exports = async function (req, res, data) {
 
     // Prepare HTTP Page
-    const http_page = require('puddy-lib/http/HTTP-1.0');
+    const http_page = require('@tinypudding/puddy-lib/http/HTTP-1.0');
 
     // Exist Account Name
     if (typeof req.query.account === "string" && req.query.account.length > 0) {
