@@ -328,21 +328,52 @@ module.exports = async function (req, res, http_page, data) {
 
                         // Prepare Other Items
 
-                        // Item Name
-                        let item_try = 1;
-                        do {
+                        // For Promise
+                        const forPromise = require('for-promise');
+
+                        // Prepare Do Whilte Data
+                        const item_try = { count: 1 };
+
+                        // Start the Promise
+                        await forPromise({
+
+                            // Prepare Settings
+                            type: 'while',
+                            while: whileData,
+
+                            // The Value will be checked here
+                            checker: function () {
+                                return (typeof req.body['item_name' + String(item_try.count)] === "string");
+                            }
+
+                        }, function (fn, fn_error) {
 
                             // Get Items
-                            const item = req.body['item_name' + String(item_try)];
-                            const item2 = req.body['item_number' + String(item_try)];
+                            const item = req.body['item_name' + String(item_try.count)];
+                            const item2 = req.body['item_number' + String(item_try.count)];
 
                             // Send Information
                             if ((typeof item === "string" || typeof item === "number") && (typeof item2 === "string" || typeof item2 === "number")) {
-                                await sendInformation(item_try, { name: item, number: item2 });
-                            }
-                            item_try++;
 
-                        } while (typeof req.body['item_name' + String(item_try)] === "string");
+                                sendInformation(item_try.count, { name: item, number: item2 }).then(() => {
+                                    item_try.count++;
+                                    return fn();
+                                }).catch(err => {
+                                    item_try.count++;
+                                    return fn_error(err);
+                                });
+
+                            }
+
+                            // Nope
+                            else {
+
+                                item_try.count++;
+                                fn();
+
+                            }
+
+                        });
 
                         // Send Info
                         await account.child('global').set(req.body);
