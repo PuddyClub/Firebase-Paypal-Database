@@ -359,7 +359,6 @@ module.exports = async function (req, res, http_page, data) {
                                     item_try.count++;
                                     return fn();
                                 }).catch(err => {
-                                    item_try.count++;
                                     return fn_error(err);
                                 });
 
