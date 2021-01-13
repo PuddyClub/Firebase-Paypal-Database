@@ -337,7 +337,6 @@ module.exports = async function (req, res, http_page, data) {
 
                         // Main Item
                         if ((typeof req.body.item_name === "string" && typeof req.body.item_number === "string") && typeof req.body.item_number === "string" && typeof req.body.item_number === "string") {
-                            console.log({ name: req.body.item_name, number: req.body.item_number });
                             await sendInformation(null, { name: req.body.item_name, number: req.body.item_number });
                         }
 
@@ -358,15 +357,14 @@ module.exports = async function (req, res, http_page, data) {
 
                             // The Value will be checked here
                             checker: function () {
-                                console.log(item_try.count);
-                                return (typeof req.body['item_name' + String(item_try.count)] === "string");
+                                const countItem = req.body['item_name' + String(item_try.count)];
+                                return ((typeof countItem === "string" && countItem.length > 0) || (typeof countItem === "number" && !isNaN(countItem)));
                             }
 
                         }, function (fn, fn_error) {
 
                             // Index
                             const tiny_index = item_try.count;
-                            console.log(tiny_index);
 
                             // Get Items
                             const item = req.body['item_name' + String(tiny_index)];
