@@ -370,22 +370,29 @@ module.exports = async function (req, res, http_page, data) {
                             if ((typeof item === "string" || typeof item === "number") && (typeof item2 === "string" || typeof item2 === "number")) {
 
                                 sendInformation(item_try.count, { name: item, number: item2 }).then(() => {
-                                    item_try.count++;
-                                    return fn();
+                                    fn();
+                                    return;
                                 }).catch(err => {
-                                    item_try.count++;
-                                    return fn_error(err);
+                                    fn_error(err);
+                                    return;
                                 });
+
+                                // Add Count
+                                item_try.count++;
 
                             }
 
                             // Nope
                             else {
 
+                                // Add count and continue
                                 item_try.count++;
                                 fn();
 
                             }
+
+                            // Complete
+                            return;
 
                         });
 
