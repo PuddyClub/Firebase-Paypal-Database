@@ -364,6 +364,7 @@ module.exports = async function (req, res, http_page, data) {
 
                             // Index
                             const tiny_index = item_try.count;
+                            console.log(tiny_index);
 
                             // Get Items
                             const item = req.body['item_name' + String(tiny_index)];
