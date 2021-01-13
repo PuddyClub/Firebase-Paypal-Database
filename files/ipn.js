@@ -178,107 +178,121 @@ module.exports = async function (req, res, http_page, data) {
 
                         // Send Information
                         const sendInformation = async function (itemNumber, data) {
+                            return new Promise(function (resolve, reject) {
 
-                            // Information
-                            const final_data = {};
+                                // Information
+                                const final_data = {};
 
-                            // Detect Custom
-                            let the_custom = null;
+                                // Detect Custom
+                                let the_custom = null;
 
-                            // Prepare Data
-                            data = { normal: data };
+                                // Prepare Data
+                                data = { normal: data };
 
-                            // Convert Data
-                            data.firebase = {};
-                            for (const item in data.normal) {
-                                data.firebase[item] = firebase.databaseEscape(data.normal[item]);
-                            }
+                                // Convert Data
+                                data.firebase = {};
+                                for (const item in data.normal) {
+                                    data.firebase[item] = firebase.databaseEscape(data.normal[item]);
+                                }
 
-                            // Get Rest Data
-                            for (const item in req.body) {
-                                if (
-                                    item !== "item_name" && item !== "item_number" && item !== "quantity" &&
-                                    !item.startsWith("item_name") && !item.startsWith("item_number") && !item.startsWith("quantity")
-                                ) {
+                                // Get Rest Data
+                                for (const item in req.body) {
+                                    if (
+                                        item !== "item_name" && item !== "item_number" && item !== "quantity" &&
+                                        !item.startsWith("item_name") && !item.startsWith("item_number") && !item.startsWith("quantity")
+                                    ) {
 
-                                    // Normal Value
-                                    if (item !== "custom") {
-                                        final_data[item] = req.body[item];
+                                        // Normal Value
+                                        if (item !== "custom") {
+                                            final_data[item] = req.body[item];
+                                        }
+
+                                        // Custom
+                                        else if (typeof req.body[item] === "string" && req.body[item].length > 0 && req.body[item] !== "global") {
+                                            the_custom = req.body[item];
+                                        }
+
                                     }
-
-                                    // Custom
-                                    else if (typeof req.body[item] === "string" && req.body[item].length > 0 && req.body[item] !== "global") {
-                                        the_custom = req.body[item];
-                                    }
-
-                                }
-                            }
-
-                            // Get Quantity
-                            final_data.quantity = getQuantity(itemNumber);
-
-                            // Rest Information
-                            final_data.item_name = data.normal.name;
-                            final_data.item_number = data.normal.number;
-
-                            // Prepare Things of the Custom Module
-                            if (exist_custom_module) {
-
-                                // Prepare Main Base
-                                if (!db_prepare) {
-                                    db_prepare = { items: {} };
                                 }
 
-                                // Insert Items
-                                if (!db_prepare.items[data.firebase.name]) {
-                                    db_prepare.items[data.firebase.name] = {};
-                                }
-                                if (!db_prepare.items[data.firebase.name][data.firebase.number]) {
-                                    db_prepare.items[data.firebase.name][data.firebase.number] = {};
-                                }
+                                // Get Quantity
+                                final_data.quantity = getQuantity(itemNumber);
 
-                            }
+                                // Rest Information
+                                final_data.item_name = data.normal.name;
+                                final_data.item_number = data.normal.number;
 
-                            // Result
-                            if (typeof the_custom !== "string") {
-
-                                // Nope Custom
-                                if (exist_custom_module) { db_prepare.isCustom = false; custom_module_options.default = true; }
-
-                                // The DB
-                                const the_data_db = account.child('default').child(data.firebase.name).child(data.firebase.number);
-
-                                // Insert Default
-                                if (exist_custom_module) { db_prepare.items[data.firebase.name][data.firebase.number] = the_data_db; }
-
-                                // Insert Value
-                                await the_data_db.set(final_data);
-
-                            }
-
-                            // Custom Result
-                            else {
-
-                                // Is Custom
-                                if (exist_custom_module) { db_prepare.isCustom = true; custom_module_options.custom = true; }
-
-                                // The DB
-                                const the_custom_data_db = account.child(firebase.databaseEscape(the_custom)).child(data.firebase.name).child(data.firebase.number);
-
-                                // Insert Custom
+                                // Prepare Things of the Custom Module
                                 if (exist_custom_module) {
-                                    db_prepare.items[data.firebase.name][data.firebase.number] = the_custom_data_db;
-                                    db_prepare.custom_name = the_custom;
+
+                                    // Prepare Main Base
+                                    if (!db_prepare) {
+                                        db_prepare = { items: {} };
+                                    }
+
+                                    // Insert Items
+                                    if (!db_prepare.items[data.firebase.name]) {
+                                        db_prepare.items[data.firebase.name] = {};
+                                    }
+                                    if (!db_prepare.items[data.firebase.name][data.firebase.number]) {
+                                        db_prepare.items[data.firebase.name][data.firebase.number] = {};
+                                    }
+
                                 }
 
-                                // Insert Value
-                                await the_custom_data_db.set(final_data);
+                                // Result
+                                if (typeof the_custom !== "string") {
 
-                            }
+                                    // Nope Custom
+                                    if (exist_custom_module) { db_prepare.isCustom = false; custom_module_options.default = true; }
 
-                            // Complete
-                            return;
+                                    // The DB
+                                    const the_data_db = account.child('default').child(data.firebase.name).child(data.firebase.number);
 
+                                    // Insert Default
+                                    if (exist_custom_module) { db_prepare.items[data.firebase.name][data.firebase.number] = the_data_db; }
+
+                                    // Insert Value
+                                    the_data_db.set(final_data).then(() => {
+                                        resolve();
+                                        return;
+                                    }).catch(err => {
+                                        reject(err);
+                                        return;
+                                    });;
+
+                                }
+
+                                // Custom Result
+                                else {
+
+                                    // Is Custom
+                                    if (exist_custom_module) { db_prepare.isCustom = true; custom_module_options.custom = true; }
+
+                                    // The DB
+                                    const the_custom_data_db = account.child(firebase.databaseEscape(the_custom)).child(data.firebase.name).child(data.firebase.number);
+
+                                    // Insert Custom
+                                    if (exist_custom_module) {
+                                        db_prepare.items[data.firebase.name][data.firebase.number] = the_custom_data_db;
+                                        db_prepare.custom_name = the_custom;
+                                    }
+
+                                    // Insert Value
+                                    await the_custom_data_db.set(final_data).then(() => {
+                                        resolve();
+                                        return;
+                                    }).catch(err => {
+                                        reject(err);
+                                        return;
+                                    });
+
+                                }
+
+                                // Complete
+                                return;
+
+                            });
                         };
 
                         // Get Quantity
@@ -359,6 +373,7 @@ module.exports = async function (req, res, http_page, data) {
                                     item_try.count++;
                                     return fn();
                                 }).catch(err => {
+                                    item_try.count++;
                                     return fn_error(err);
                                 });
 

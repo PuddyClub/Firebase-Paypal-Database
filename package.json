@@ -1,6 +1,6 @@
 {
   "name": "@tinypudding/firebase-paypal-database",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Firebase Database to Paypal Webhooks.",
   "main": "index.js",
   "scripts": {
