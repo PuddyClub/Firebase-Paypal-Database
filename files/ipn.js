@@ -339,7 +339,7 @@ module.exports = async function (req, res, http_page, data) {
 
                             // Prepare Settings
                             type: 'while',
-                            while: whileData,
+                            while: item_try,
 
                             // The Value will be checked here
                             checker: function () {
