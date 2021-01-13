@@ -362,23 +362,26 @@ module.exports = async function (req, res, http_page, data) {
 
                         }, function (fn, fn_error) {
 
+                            // Index
+                            const tiny_index = item_try.count;
+
                             // Get Items
-                            const item = req.body['item_name' + String(item_try.count)];
-                            const item2 = req.body['item_number' + String(item_try.count)];
+                            const item = req.body['item_name' + String(tiny_index)];
+                            const item2 = req.body['item_number' + String(tiny_index)];
 
                             // Send Information
                             if ((typeof item === "string" || typeof item === "number") && (typeof item2 === "string" || typeof item2 === "number")) {
 
-                                sendInformation(item_try.count, { name: item, number: item2 }).then(() => {
+                                // Add Count
+                                item_try.count++;
+
+                                sendInformation(tiny_index, { name: item, number: item2 }).then(() => {
                                     fn();
                                     return;
                                 }).catch(err => {
                                     fn_error(err);
                                     return;
                                 });
-
-                                // Add Count
-                                item_try.count++;
 
                             }
 
