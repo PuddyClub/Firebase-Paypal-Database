@@ -279,7 +279,7 @@ module.exports = async function (req, res, http_page, data) {
                                     }
 
                                     // Insert Value
-                                    await the_custom_data_db.set(final_data).then(() => {
+                                    the_custom_data_db.set(final_data).then(() => {
                                         resolve();
                                         return;
                                     }).catch(err => {
