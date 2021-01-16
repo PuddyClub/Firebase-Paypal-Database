@@ -1,9 +1,10 @@
 // Credits
 // https://github.com/Epictetus/paypal-ipn
-module.exports = async function (req, res, http_page, data) {
+module.exports = async function (req, res, http_page, data, logger) {
 
     try {
 
+        // Prepare Modules
         const https = require('https');
         const qs = require('querystring');
         const objType = require('@tinypudding/puddy-lib/get/objType');
@@ -13,7 +14,7 @@ module.exports = async function (req, res, http_page, data) {
 
         // Prepare Verify 
         if (typeof req.body === "undefined") {
-            console.error('Invalid Post!');
+            logger.error(new Error('Invalid Post!'));
             return http_page.send(res, 403);
         }
 
@@ -145,8 +146,7 @@ module.exports = async function (req, res, http_page, data) {
 
                         //Request error
                         req.on('error', function request_error(e) {
-                            console.error(e.message);
-                            console.error(e);
+                            logger.error(e);
                             reject(e);
                         });
 
@@ -415,15 +415,14 @@ module.exports = async function (req, res, http_page, data) {
 
                     // Nope
                     else {
-                        console.error('Invalid Data!');
+                        logger.error(new Error('Invalid Data!'));
                         return http_page.send(res, 401);
                     }
 
                 } catch (err) {
 
                     // HTTP Page
-                    console.error(err);
-                    console.error(err.message);
+                    logger.error(err);
                     return http_page.send(res, 500);
 
                 }
@@ -432,7 +431,7 @@ module.exports = async function (req, res, http_page, data) {
 
             // Nope
             else {
-                console.error('Invalid Receiver Email!');
+                logger.warn(new Error('Invalid Receiver Email!'));
                 return http_page.send(res, 401);
             }
 
@@ -440,15 +439,14 @@ module.exports = async function (req, res, http_page, data) {
 
         // Nope
         else {
-            console.error('Invalid Account!');
+            logger.warn(new Error('Invalid Account!'));
             return http_page.send(res, 401);
         }
 
     } catch (err) {
 
         // HTTP Page
-        console.error(err);
-        console.error(err.message);
+        logger.error(err);
         return http_page.send(res, 500);
 
     }

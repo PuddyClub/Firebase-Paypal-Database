@@ -1,5 +1,8 @@
 module.exports = async function (req, res, data) {
 
+    // Logger
+    const logger = require('@tinypudding/puddy-lib/firebase/logger');
+
     // Prepare HTTP Page
     const http_page = require('@tinypudding/puddy-lib/http/HTTP-1.0');
 
@@ -18,19 +21,19 @@ module.exports = async function (req, res, data) {
 
                 // IPN
                 if (req.query.type === "ipn") {
-                    await require('./ipn')(req, res, http_page, data);
+                    await require('./ipn')(req, res, http_page, data, logger);
                     return;
                 }
 
                 // Webhook
                 else if (req.query.type === "webhook") {
-                    await require('./webhook')(req, res, http_page, data);
+                    await require('./webhook')(req, res, http_page, data, logger);
                     return;
                 }
 
                 // Nope
                 else {
-                    console.error('Type not found!');
+                    logger.error(new Error('Type not found!'));
                     return http_page.send(res, 403);
                 }
             
@@ -38,7 +41,7 @@ module.exports = async function (req, res, data) {
 
             // Nope
             else {
-                console.error('Invalid Sandbox Value!');
+                logger.error(new Error('Invalid Sandbox Value!'));
                 return http_page.send(res, 403);
             }
 
@@ -46,7 +49,7 @@ module.exports = async function (req, res, data) {
 
         // Nope
         else {
-            console.error('Invalid Type!');
+            logger.error(new Error('Invalid Type!'));
             return http_page.send(res, 403);
         }
 
@@ -54,7 +57,7 @@ module.exports = async function (req, res, data) {
 
     // Nope
     else {
-        console.error('Invalid Account Name!');
+        logger.error(new Error('Invalid Account Name!'));
         return http_page.send(res, 403);
     }
 

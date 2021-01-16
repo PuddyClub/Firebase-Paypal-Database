@@ -1,4 +1,4 @@
-module.exports = async function (req, res, http_page, data) {
+module.exports = async function (req, res, http_page, data, logger) {
 
     try {
 
@@ -47,7 +47,7 @@ module.exports = async function (req, res, http_page, data) {
     } catch (err) {
 
         // HTTP Page
-        console.error(err);
+        logger.error(err);
         return http_page.send(res, 500);
 
     }
