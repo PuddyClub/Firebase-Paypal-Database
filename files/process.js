@@ -33,7 +33,7 @@ module.exports = async function (req, res, data) {
 
                 // Nope
                 else {
-                    logger.error(new Error('Type not found!'));
+                    await logger.error(new Error('Type not found!'));
                     return http_page.send(res, 403);
                 }
             
@@ -41,7 +41,7 @@ module.exports = async function (req, res, data) {
 
             // Nope
             else {
-                logger.error(new Error('Invalid Sandbox Value!'));
+                await logger.error(new Error('Invalid Sandbox Value!'));
                 return http_page.send(res, 403);
             }
 
@@ -49,7 +49,7 @@ module.exports = async function (req, res, data) {
 
         // Nope
         else {
-            logger.error(new Error('Invalid Type!'));
+            await logger.error(new Error('Invalid Type!'));
             return http_page.send(res, 403);
         }
 
@@ -57,7 +57,7 @@ module.exports = async function (req, res, data) {
 
     // Nope
     else {
-        logger.error(new Error('Invalid Account Name!'));
+        await logger.error(new Error('Invalid Account Name!'));
         return http_page.send(res, 403);
     }
 

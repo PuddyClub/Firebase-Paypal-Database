@@ -47,7 +47,7 @@ module.exports = async function (req, res, http_page, data, logger) {
     } catch (err) {
 
         // HTTP Page
-        logger.error(err);
+        await logger.error(err);
         return http_page.send(res, 500);
 
     }

@@ -14,7 +14,7 @@ module.exports = async function (req, res, http_page, data, logger) {
 
         // Prepare Verify 
         if (typeof req.body === "undefined") {
-            logger.error(new Error('Invalid Post!'));
+            await logger.error(new Error('Invalid Post!'));
             return http_page.send(res, 403);
         }
 
@@ -145,9 +145,10 @@ module.exports = async function (req, res, http_page, data, logger) {
                         req.end();
 
                         //Request error
-                        req.on('error', function request_error(e) {
-                            logger.error(e);
+                        req.on('error', async function request_error(e) {
+                            await logger.error(e);
                             reject(e);
+                            return;
                         });
 
                     });
@@ -415,14 +416,14 @@ module.exports = async function (req, res, http_page, data, logger) {
 
                     // Nope
                     else {
-                        logger.error(new Error('Invalid Data!'));
+                        await logger.error(new Error('Invalid Data!'));
                         return http_page.send(res, 401);
                     }
 
                 } catch (err) {
 
                     // HTTP Page
-                    logger.error(err);
+                    await logger.error(err);
                     return http_page.send(res, 500);
 
                 }
@@ -431,7 +432,7 @@ module.exports = async function (req, res, http_page, data, logger) {
 
             // Nope
             else {
-                logger.warn(new Error('Invalid Receiver Email!'));
+                await logger.warn(new Error('Invalid Receiver Email!'));
                 return http_page.send(res, 401);
             }
 
@@ -439,14 +440,14 @@ module.exports = async function (req, res, http_page, data, logger) {
 
         // Nope
         else {
-            logger.warn(new Error('Invalid Account!'));
+            await logger.warn(new Error('Invalid Account!'));
             return http_page.send(res, 401);
         }
 
     } catch (err) {
 
         // HTTP Page
-        logger.error(err);
+        await logger.error(err);
         return http_page.send(res, 500);
 
     }
