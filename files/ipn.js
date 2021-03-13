@@ -12,6 +12,9 @@ module.exports = async function (req, res, http_page, data, logger) {
         const SANDBOX_URL = 'www.sandbox.paypal.com';
         const REGULAR_URL = 'www.paypal.com';
 
+        // Send Debug Error
+        const debugError = async function () { if (data.warnError) { await logger.warn('Result Error Requiest:', req.body, req.headers); } return; };
+
         // Prepare Verify 
         if (typeof req.body === "undefined") {
             await logger.error(new Error('Invalid Post!'));
@@ -147,6 +150,7 @@ module.exports = async function (req, res, http_page, data, logger) {
                         //Request error
                         req.on('error', async function request_error(e) {
                             await logger.error(e);
+                            await debugError();
                             reject(e);
                             return;
                         });
@@ -417,6 +421,7 @@ module.exports = async function (req, res, http_page, data, logger) {
                     // Nope
                     else {
                         await logger.error(new Error('Invalid Data!'));
+                        await debugError();
                         return http_page.send(res, 401);
                     }
 
@@ -424,6 +429,7 @@ module.exports = async function (req, res, http_page, data, logger) {
 
                     // HTTP Page
                     await logger.error(err);
+                    await debugError();
                     return http_page.send(res, 500);
 
                 }
@@ -448,6 +454,7 @@ module.exports = async function (req, res, http_page, data, logger) {
 
         // HTTP Page
         await logger.error(err);
+        await debugError();
         return http_page.send(res, 500);
 
     }

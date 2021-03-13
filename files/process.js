@@ -33,7 +33,7 @@ module.exports = async function (req, res, data) {
 
                 // Nope
                 else {
-                    await logger.error(new Error('Type not found!'));
+                    await logger.error(new Error(`Type not found! ${req.query.type}`));
                     return http_page.send(res, 403);
                 }
             
