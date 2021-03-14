@@ -2,6 +2,9 @@
 // https://github.com/Epictetus/paypal-ipn
 module.exports = async function (req, res, http_page, data, logger) {
 
+    // Send Debug Error
+    const debugError = async function () { if (data.warnError) { await logger.warn('Result Error Requiest:', req.body, req.headers); } return; };
+
     try {
 
         // Prepare Modules
@@ -11,9 +14,6 @@ module.exports = async function (req, res, http_page, data, logger) {
 
         const SANDBOX_URL = 'www.sandbox.paypal.com';
         const REGULAR_URL = 'www.paypal.com';
-
-        // Send Debug Error
-        const debugError = async function () { if (data.warnError) { await logger.warn('Result Error Requiest:', req.body, req.headers); } return; };
 
         // Prepare Verify 
         if (typeof req.body === "undefined") {
