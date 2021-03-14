@@ -9,12 +9,7 @@ module.exports = async function (req, res, http_page, data, logger) {
     try {
 
         // Prepare Modules
-        const https = require('https');
-        const qs = require('querystring');
         const objType = require('@tinypudding/puddy-lib/get/objType');
-
-        const SANDBOX_URL = 'www.sandbox.paypal.com';
-        const REGULAR_URL = 'www.paypal.com';
 
         // Prepare Verify 
         if (typeof req.body === "undefined") {
@@ -23,16 +18,6 @@ module.exports = async function (req, res, http_page, data, logger) {
         }
 
         req.body.cmd = '_notify-validate';
-
-        let body = qs.stringify(req.body);
-
-        //Set up the request to paypal
-        let req_options = {
-            host: (req.body.test_ipn || req.query.sandbox) ? SANDBOX_URL : REGULAR_URL,
-            method: 'POST',
-            path: '/cgi-bin/webscr',
-            headers: { 'Content-Length': body.length }
-        }
 
         // Lodash Module
         const _ = require('lodash');
@@ -117,327 +102,295 @@ module.exports = async function (req, res, http_page, data, logger) {
             // Confirm to Continue
             if (validator_email) {
 
-                // Final Result
-                try {
+                // Is Sandbox
+                const isSandbox = (req.query.sandbox || req.body.test_ipn);
 
-                    // Get Paypal Value
-                    const result = await new Promise(function (resolve, reject) {
+                // Get Module
+                const ipn = require('pp-ipn');
 
-                        // HTTPS Request
-                        let req = https.request(req_options, function paypal_request(res) {
-                            res.on('data', async function paypal_response(d) {
+                ipn.verify(req.body, { 'allow_sandbox': isSandbox }, async function callback(err, mes) {
 
-                                // Response
-                                let response = d.toString();
+                    // Final Result
+                    try {
 
-                                // Verified
-                                if (response === 'VERIFIED') {
-                                    resolve(true);
+                        // Success
+                        if (!err) {
+
+                            // Get Account
+                            let account = db.child(firebase.databaseEscape(req.query.account)).child('ipn');
+
+                            // Normal
+                            if (!isSandbox) {
+                                account = account.child('live');
+                            }
+
+                            // Test
+                            else {
+                                account = account.child('sandbox');
+                            }
+
+                            // Extra DB Actions Prepare
+                            let db_prepare = null;
+
+                            // Exist Custom Module
+                            const custom_module_manager = require('@tinypudding/puddy-lib/libs/custom_module_loader');
+                            const exist_custom_module = custom_module_manager.validator(custom_modules, 'ipn');
+                            const custom_module_options = { default: false, custom: false };
+
+                            // Send Information
+                            const sendInformation = async function (itemNumber, data) {
+                                return new Promise(function (resolve, reject) {
+
+                                    // Information
+                                    const final_data = {};
+
+                                    // Detect Custom
+                                    let the_custom = null;
+
+                                    // Prepare Data
+                                    data = { normal: data };
+
+                                    // Convert Data
+                                    data.firebase = {};
+                                    for (const item in data.normal) {
+                                        data.firebase[item] = firebase.databaseEscape(data.normal[item]);
+                                    }
+
+                                    // Get Rest Data
+                                    for (const item in req.body) {
+                                        if (
+                                            item !== "item_name" && item !== "item_number" && item !== "quantity" &&
+                                            !item.startsWith("item_name") && !item.startsWith("item_number") && !item.startsWith("quantity")
+                                        ) {
+
+                                            // Normal Value
+                                            if (item !== "custom") {
+                                                final_data[item] = req.body[item];
+                                            }
+
+                                            // Custom
+                                            else if (typeof req.body[item] === "string" && req.body[item].length > 0 && req.body[item] !== "global") {
+                                                the_custom = req.body[item];
+                                            }
+
+                                        }
+                                    }
+
+                                    // Get Quantity
+                                    final_data.quantity = getQuantity(itemNumber);
+
+                                    // Rest Information
+                                    final_data.item_name = data.normal.name;
+                                    final_data.item_number = data.normal.number;
+
+                                    // Prepare Things of the Custom Module
+                                    if (exist_custom_module) {
+
+                                        // Prepare Main Base
+                                        if (!db_prepare) {
+                                            db_prepare = { items: {} };
+                                        }
+
+                                        // Insert Items
+                                        if (!db_prepare.items[data.firebase.name]) {
+                                            db_prepare.items[data.firebase.name] = {};
+                                        }
+                                        if (!db_prepare.items[data.firebase.name][data.firebase.number]) {
+                                            db_prepare.items[data.firebase.name][data.firebase.number] = {};
+                                        }
+
+                                    }
+
+                                    // Result
+                                    if (typeof the_custom !== "string") {
+
+                                        // Nope Custom
+                                        if (exist_custom_module) { db_prepare.isCustom = false; custom_module_options.default = true; }
+
+                                        // The DB
+                                        const the_data_db = account.child('default').child(data.firebase.name).child(data.firebase.number);
+
+                                        // Insert Default
+                                        if (exist_custom_module) { db_prepare.items[data.firebase.name][data.firebase.number] = the_data_db; }
+
+                                        // Insert Value
+                                        the_data_db.set(final_data).then(() => {
+                                            resolve();
+                                            return;
+                                        }).catch(err => {
+                                            reject(err);
+                                            return;
+                                        });;
+
+                                    }
+
+                                    // Custom Result
+                                    else {
+
+                                        // Is Custom
+                                        if (exist_custom_module) { db_prepare.isCustom = true; custom_module_options.custom = true; }
+
+                                        // The DB
+                                        const the_custom_data_db = account.child(firebase.databaseEscape(the_custom)).child(data.firebase.name).child(data.firebase.number);
+
+                                        // Insert Custom
+                                        if (exist_custom_module) {
+                                            db_prepare.items[data.firebase.name][data.firebase.number] = the_custom_data_db;
+                                            db_prepare.custom_name = the_custom;
+                                        }
+
+                                        // Insert Value
+                                        the_custom_data_db.set(final_data).then(() => {
+                                            resolve();
+                                            return;
+                                        }).catch(err => {
+                                            reject(err);
+                                            return;
+                                        });
+
+                                    }
+
+                                    // Complete
+                                    return;
+
+                                });
+                            };
+
+                            // Get Quantity
+                            const getQuantity = function (the_item = null) {
+
+                                // Exist Value
+                                if (the_item) {
+
+                                    // Get the Value
+                                    if (typeof req.body['quantity' + String(the_item)] === "string" || typeof req.body.quantity['quantity' + String(the_item)] === "number") {
+                                        return Number(req.body['quantity' + String(the_item)]);
+                                    }
+
+                                    // Get Default
+                                    else if (typeof req.body.quantity === "string" || typeof req.body.quantity === "number") {
+                                        return Number(req.body.quantity);
+                                    }
+
+                                    // Nope
+                                    else {
+                                        return null;
+                                    }
+
                                 }
 
                                 // Nope
                                 else {
-                                    await debugError();
-                                    reject(new Error('PAYPAL IPN INVALID! Response: ' + response));
-                                }
 
-                                // Complete
-                                return;
-
-                            });
-                        });
-
-                        //Add the post parameters to the request body
-                        req.write(body);
-
-                        req.end();
-
-                        //Request error
-                        req.on('error', async function request_error(e) {
-                            await logger.error(e);
-                            await debugError();
-                            reject(e);
-                            return;
-                        });
-
-                    });
-
-                    // Exist Result
-                    if (result) {
-
-                        // Get Account
-                        let account = db.child(firebase.databaseEscape(req.query.account)).child('ipn');
-
-                        // Normal
-                        if (!req.body.test_ipn) {
-                            account = account.child('live');
-                        }
-
-                        // Test
-                        else {
-                            account = account.child('sandbox');
-                        }
-
-                        // Extra DB Actions Prepare
-                        let db_prepare = null;
-
-                        // Exist Custom Module
-                        const custom_module_manager = require('@tinypudding/puddy-lib/libs/custom_module_loader');
-                        const exist_custom_module = custom_module_manager.validator(custom_modules, 'ipn');
-                        const custom_module_options = { default: false, custom: false };
-
-                        // Send Information
-                        const sendInformation = async function (itemNumber, data) {
-                            return new Promise(function (resolve, reject) {
-
-                                // Information
-                                const final_data = {};
-
-                                // Detect Custom
-                                let the_custom = null;
-
-                                // Prepare Data
-                                data = { normal: data };
-
-                                // Convert Data
-                                data.firebase = {};
-                                for (const item in data.normal) {
-                                    data.firebase[item] = firebase.databaseEscape(data.normal[item]);
-                                }
-
-                                // Get Rest Data
-                                for (const item in req.body) {
-                                    if (
-                                        item !== "item_name" && item !== "item_number" && item !== "quantity" &&
-                                        !item.startsWith("item_name") && !item.startsWith("item_number") && !item.startsWith("quantity")
-                                    ) {
-
-                                        // Normal Value
-                                        if (item !== "custom") {
-                                            final_data[item] = req.body[item];
-                                        }
-
-                                        // Custom
-                                        else if (typeof req.body[item] === "string" && req.body[item].length > 0 && req.body[item] !== "global") {
-                                            the_custom = req.body[item];
-                                        }
-
-                                    }
-                                }
-
-                                // Get Quantity
-                                final_data.quantity = getQuantity(itemNumber);
-
-                                // Rest Information
-                                final_data.item_name = data.normal.name;
-                                final_data.item_number = data.normal.number;
-
-                                // Prepare Things of the Custom Module
-                                if (exist_custom_module) {
-
-                                    // Prepare Main Base
-                                    if (!db_prepare) {
-                                        db_prepare = { items: {} };
+                                    // Get Default
+                                    if (typeof req.body.quantity === "string" || typeof req.body.quantity === "number") {
+                                        return Number(req.body.quantity);
                                     }
 
-                                    // Insert Items
-                                    if (!db_prepare.items[data.firebase.name]) {
-                                        db_prepare.items[data.firebase.name] = {};
-                                    }
-                                    if (!db_prepare.items[data.firebase.name][data.firebase.number]) {
-                                        db_prepare.items[data.firebase.name][data.firebase.number] = {};
+                                    // Nope
+                                    else {
+                                        return null;
                                     }
 
                                 }
 
-                                // Result
-                                if (typeof the_custom !== "string") {
+                            };
 
-                                    // Nope Custom
-                                    if (exist_custom_module) { db_prepare.isCustom = false; custom_module_options.default = true; }
+                            // Main Item
+                            if ((typeof req.body.item_name === "string" && typeof req.body.item_number === "string") && typeof req.body.item_number === "string" && typeof req.body.item_number === "string") {
+                                await sendInformation(null, { name: req.body.item_name, number: req.body.item_number });
+                            }
 
-                                    // The DB
-                                    const the_data_db = account.child('default').child(data.firebase.name).child(data.firebase.number);
+                            // Prepare Other Items
 
-                                    // Insert Default
-                                    if (exist_custom_module) { db_prepare.items[data.firebase.name][data.firebase.number] = the_data_db; }
+                            // For Promise
+                            const forPromise = require('for-promise');
 
-                                    // Insert Value
-                                    the_data_db.set(final_data).then(() => {
-                                        resolve();
+                            // Prepare Do Whilte Data
+                            const item_try = { count: 1 };
+
+                            // Start the Promise
+                            await forPromise({
+
+                                // Prepare Settings
+                                type: 'while',
+                                while: item_try,
+
+                                // The Value will be checked here
+                                checker: function () {
+                                    const countItem = req.body['item_name' + String(item_try.count)];
+                                    return ((typeof countItem === "string" && countItem.length > 0) || (typeof countItem === "number" && !isNaN(countItem)));
+                                }
+
+                            }, function (fn, fn_error) {
+
+                                // Index
+                                const tiny_index = item_try.count;
+
+                                // Get Items
+                                const item = req.body['item_name' + String(tiny_index)];
+                                const item2 = req.body['item_number' + String(tiny_index)];
+
+                                // Send Information
+                                if ((typeof item === "string" || typeof item === "number") && (typeof item2 === "string" || typeof item2 === "number")) {
+
+                                    // Add Count
+                                    item_try.count++;
+
+                                    sendInformation(tiny_index, { name: item, number: item2 }).then(() => {
+                                        fn();
                                         return;
                                     }).catch(err => {
-                                        reject(err);
-                                        return;
-                                    });;
-
-                                }
-
-                                // Custom Result
-                                else {
-
-                                    // Is Custom
-                                    if (exist_custom_module) { db_prepare.isCustom = true; custom_module_options.custom = true; }
-
-                                    // The DB
-                                    const the_custom_data_db = account.child(firebase.databaseEscape(the_custom)).child(data.firebase.name).child(data.firebase.number);
-
-                                    // Insert Custom
-                                    if (exist_custom_module) {
-                                        db_prepare.items[data.firebase.name][data.firebase.number] = the_custom_data_db;
-                                        db_prepare.custom_name = the_custom;
-                                    }
-
-                                    // Insert Value
-                                    the_custom_data_db.set(final_data).then(() => {
-                                        resolve();
-                                        return;
-                                    }).catch(err => {
-                                        reject(err);
+                                        fn_error(err);
                                         return;
                                     });
 
                                 }
 
+                                // Nope
+                                else {
+
+                                    // Add count and continue
+                                    item_try.count++;
+                                    fn();
+
+                                }
+
                                 // Complete
                                 return;
 
                             });
-                        };
 
-                        // Get Quantity
-                        const getQuantity = function (the_item = null) {
+                            // Send Info
+                            await account.child('global').set(req.body);
 
-                            // Exist Value
-                            if (the_item) {
-
-                                // Get the Value
-                                if (typeof req.body['quantity' + String(the_item)] === "string" || typeof req.body.quantity['quantity' + String(the_item)] === "number") {
-                                    return Number(req.body['quantity' + String(the_item)]);
-                                }
-
-                                // Get Default
-                                else if (typeof req.body.quantity === "string" || typeof req.body.quantity === "number") {
-                                    return Number(req.body.quantity);
-                                }
-
-                                // Nope
-                                else {
-                                    return null;
-                                }
-
-                            }
-
-                            // Nope
-                            else {
-
-                                // Get Default
-                                if (typeof req.body.quantity === "string" || typeof req.body.quantity === "number") {
-                                    return Number(req.body.quantity);
-                                }
-
-                                // Nope
-                                else {
-                                    return null;
-                                }
-
-                            }
-
-                        };
-
-                        // Main Item
-                        if ((typeof req.body.item_name === "string" && typeof req.body.item_number === "string") && typeof req.body.item_number === "string" && typeof req.body.item_number === "string") {
-                            await sendInformation(null, { name: req.body.item_name, number: req.body.item_number });
-                        }
-
-                        // Prepare Other Items
-
-                        // For Promise
-                        const forPromise = require('for-promise');
-
-                        // Prepare Do Whilte Data
-                        const item_try = { count: 1 };
-
-                        // Start the Promise
-                        await forPromise({
-
-                            // Prepare Settings
-                            type: 'while',
-                            while: item_try,
-
-                            // The Value will be checked here
-                            checker: function () {
-                                const countItem = req.body['item_name' + String(item_try.count)];
-                                return ((typeof countItem === "string" && countItem.length > 0) || (typeof countItem === "number" && !isNaN(countItem)));
-                            }
-
-                        }, function (fn, fn_error) {
-
-                            // Index
-                            const tiny_index = item_try.count;
-
-                            // Get Items
-                            const item = req.body['item_name' + String(tiny_index)];
-                            const item2 = req.body['item_number' + String(tiny_index)];
-
-                            // Send Information
-                            if ((typeof item === "string" || typeof item === "number") && (typeof item2 === "string" || typeof item2 === "number")) {
-
-                                // Add Count
-                                item_try.count++;
-
-                                sendInformation(tiny_index, { name: item, number: item2 }).then(() => {
-                                    fn();
-                                    return;
-                                }).catch(err => {
-                                    fn_error(err);
-                                    return;
-                                });
-
-                            }
-
-                            // Nope
-                            else {
-
-                                // Add count and continue
-                                item_try.count++;
-                                fn();
-
+                            // Extra Actions Manager for Paypal Start
+                            if (db_prepare && exist_custom_module) {
+                                await custom_module_manager.run(custom_modules, db_prepare, 'ipn', custom_module_options);
                             }
 
                             // Complete
-                            return;
+                            return http_page.send(res, 200);
 
-                        });
-
-                        // Send Info
-                        await account.child('global').set(req.body);
-
-                        // Extra Actions Manager for Paypal Start
-                        if (db_prepare && exist_custom_module) {
-                            await custom_module_manager.run(custom_modules, db_prepare, 'ipn', custom_module_options);
                         }
 
-                        // Complete
-                        return http_page.send(res, 200);
+                        // Nope
+                        else {
+                            await logger.error(err);
+                            await debugError();
+                            return http_page.send(res, 401);
+                        }
 
-                    }
+                    } catch (err) {
 
-                    // Nope
-                    else {
-                        await logger.error(new Error('Invalid Data!'));
+                        // HTTP Page
+                        await logger.error(err);
                         await debugError();
-                        return http_page.send(res, 401);
+                        return http_page.send(res, 500);
+
                     }
 
-                } catch (err) {
-
-                    // HTTP Page
-                    await logger.error(err);
-                    await debugError();
-                    return http_page.send(res, 500);
-
-                }
+                });
 
             }
 
