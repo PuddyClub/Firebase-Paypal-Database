@@ -3,7 +3,8 @@
 module.exports = async function (req, res, http_page, data, logger) {
 
     // Send Debug Error
-    const debugError = async function () { if (data.warnError) { await logger.warn('Result Error Requiest:', req.body, req.headers); } return; };
+    let debugSent = false;
+    const debugError = async function () { if (data.warnError && !debugSent) { debugSent = true; await logger.error('Result Error Requiest:', req.body, req.headers); } return; };
 
     try {
 
@@ -124,7 +125,7 @@ module.exports = async function (req, res, http_page, data, logger) {
 
                         // HTTPS Request
                         let req = https.request(req_options, function paypal_request(res) {
-                            res.on('data', function paypal_response(d) {
+                            res.on('data', async function paypal_response(d) {
 
                                 // Response
                                 let response = d.toString();
@@ -136,8 +137,12 @@ module.exports = async function (req, res, http_page, data, logger) {
 
                                 // Nope
                                 else {
+                                    await debugError();
                                     reject(new Error('PAYPAL IPN INVALID!'));
                                 }
+
+                                // Complete
+                                return;
 
                             });
                         });
