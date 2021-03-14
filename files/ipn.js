@@ -106,7 +106,7 @@ module.exports = async function (req, res, http_page, data, logger) {
                 const isSandbox = (req.query.sandbox || req.body.test_ipn);
 
                 // Get Module
-                const ipn = require('pp-ipn');
+                const ipn = require('paypal-ipn');
 
                 ipn.verify(req.body, { 'allow_sandbox': isSandbox }, async function callback(err) {
 
