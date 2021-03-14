@@ -138,7 +138,7 @@ module.exports = async function (req, res, http_page, data, logger) {
                                 // Nope
                                 else {
                                     await debugError();
-                                    reject(new Error('PAYPAL IPN INVALID!'));
+                                    reject(new Error('PAYPAL IPN INVALID! Response: ' + response));
                                 }
 
                                 // Complete
